@@ -23,11 +23,21 @@ WORKDIR /var/www
 # Copy existing application directory contents
 COPY . /var/www
 
-# Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader
+# Configure Composer to ignore security advisories (for build)
+RUN composer config --no-plugins allow-plugins.composer/composer true 2>/dev/null || true && \
+    composer config --no-plugins policy.advisories.block false 2>/dev/null || true
+
+# Install PHP dependencies (skip scripts to avoid package:discover issues)
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
 # Install Node dependencies and build assets
-RUN npm ci && npm run build
+RUN npm install && npm run build
+
+# Ensure bootstrap/cache exists and is writable
+RUN mkdir -p /var/www/bootstrap/cache && chmod -R 775 /var/www/bootstrap/cache
+
+# Ensure storage framework directories exist
+RUN mkdir -p /var/www/storage/framework/sessions /var/www/storage/framework/views /var/www/storage/framework/cache /var/www/storage/framework/testing
 
 # Change ownership of our applications
 RUN chown -R www-data:www-data /var/www

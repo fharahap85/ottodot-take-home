@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Student;
 use App\Models\TrialClass;
