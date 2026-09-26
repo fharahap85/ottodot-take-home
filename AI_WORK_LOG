@@ -1,0 +1,288 @@
+[AI-001]
+
+Task:
+Repository inspection and project state reporting
+
+AI contribution:
+Analyzed existing repository structure, identified missing files, reported PROJECT STATE per workflow specification
+
+Decision:
+Accepted
+
+Reason:
+Provided accurate baseline for implementation planning
+
+Files affected:
+None (inspection only)
+
+Verification:
+Reported current state matches actual filesystem
+
+Remaining risk:
+Docker not running locally, cannot verify container startup
+
+---
+
+[AI-002]
+
+Task:
+Step 1 - Dockerized Project Setup
+
+AI contribution:
+Created Dockerfile, compose.yaml, docker/nginx.conf, .dockerignore, .env.example
+
+Decision:
+Accepted
+
+Reason:
+Minimal, reproducible Docker setup matching workflow requirements (app + db services, nginx reverse proxy)
+
+Files affected:
+- Dockerfile
+- compose.yaml
+- docker/nginx.conf
+- .dockerignore
+- .env.example
+
+Verification:
+`docker compose config` validates successfully
+Docker Desktop not running - container startup NOT VERIFIED
+
+Remaining risk:
+Cannot verify Laravel boots in container, database connection works, frontend builds
+
+---
+
+[AI-003]
+
+Task:
+Step 2 - Database & Domain Model
+
+AI contribution:
+Created 5 migrations (parents, students, trial_classes, bookings, payment_attempts), 5 models (ParentModel, Student, TrialClass, Booking, PaymentAttempt), 5 factories, DatabaseSeeder + 4 seeders with specific demo scenarios
+
+Decision:
+Accepted
+
+Reason:
+Matches workflow data model exactly; seed data covers all required scenarios (available seats, 3 confirmed, duplicate attempt, failed payment)
+
+Files affected:
+- database/migrations/2026_09_27_000001_create_parents_table.php
+- database/migrations/2026_09_27_000002_create_students_table.php
+- database/migrations/2026_09_27_000003_create_trial_classes_table.php
+- database/migrations/2026_09_27_000004_create_bookings_table.php
+- database/migrations/2026_09_27_000005_create_payment_attempts_table.php
+- app/Models/ParentModel.php (updated)
+- app/Models/Student.php (updated)
+- app/Models/TrialClass.php (updated)
+- app/Models/Booking.php (new)
+- app/Models/PaymentAttempt.php (new)
+- database/factories/*.php (5 files)
+- database/seeders/*.php (5 files)
+
+Verification:
+Migrations NOT VERIFIED (Docker not running)
+Seeders NOT VERIFIED
+
+Remaining risk:
+Unique index on bookings table for duplicate confirmed booking - need to verify PostgreSQL accepts syntax
+
+---
+
+[AI-004]
+
+Task:
+Step 3 - Core Booking Flow
+
+AI contribution:
+Created TrialClassController (index, roster), BookingController (store, show), routes for all endpoints
+
+Decision:
+Accepted
+
+Reason:
+Implements required flow: Parent → Choose Child → Choose Class → Create Booking → pending_payment
+
+Files affected:
+- app/Http/Controllers/TrialClassController.php
+- app/Http/Controllers/BookingController.php
+- routes/web.php
+
+Verification:
+Code review - controllers follow Laravel conventions, validation present, relationships loaded correctly
+
+Remaining risk:
+NOT VERIFIED in running application
+
+---
+
+[AI-005]
+
+Task:
+Step 4 - Mock Payment
+
+AI contribution:
+Created PaymentController with process() method handling success/failed results, recording PaymentAttempt, updating booking status
+
+Decision:
+Accepted
+
+Reason:
+Simple mock payment per requirements; failed payment correctly sets payment_failed status and records attempt
+
+Files affected:
+- app/Http/Controllers/PaymentController.php
+
+Verification:
+Code review - logic handles both success and failure paths correctly
+
+Remaining risk:
+Success path delegates to concurrency logic (Step 5) - NOT VERIFIED end-to-end
+
+---
+
+[AI-006]
+
+Task:
+Step 5 - Concurrency & Last-Seat Protection
+
+AI contribution:
+Implemented protected confirmation flow in PaymentController::handleSuccessfulPayment():
+- DB::transaction with TrialClass::lockForUpdate()
+- Re-checks booking state, duplicate confirmed, confirmed count while holding lock
+- Enforces capacity before confirming
+- Catches LockException, treats as failure
+
+Decision:
+Accepted
+
+Reason:
+Uses PostgreSQL row-level locking as specified; serializes competing confirmations on trial_class row; re-checks all conditions inside critical section
+
+Files affected:
+- app/Http/Controllers/PaymentController.php
+
+Verification:
+Code review confirms:
+- Transaction boundary encloses all critical checks
+- lockForUpdate() on trial_class row (correct resource)
+- Capacity re-checked while lock held
+- Duplicate confirmed re-checked while lock held
+- Confirmed count cannot exceed capacity
+
+Remaining risk:
+True concurrent testing NOT VERIFIED (requires running Docker + concurrency test tool)
+
+---
+
+[AI-007]
+
+Task:
+Step 6 - Minimal UI & Roster
+
+AI contribution:
+Updated Welcome.vue, TrialClasses/Index.vue (dynamic students from props), Bookings/Show.vue (payment simulation), created TrialClasses/Roster.vue
+
+Decision:
+Accepted
+
+Reason:
+Minimal booking page with child/class selection, available seats display, booking form, payment simulation buttons, status display, confirmed roster view
+
+Files affected:
+- resources/js/Pages/Welcome.vue
+- resources/js/Pages/TrialClasses/Index.vue
+- resources/js/Pages/TrialClasses/Roster.vue (new)
+- resources/js/Pages/Bookings/Show.vue
+
+Verification:
+Code review - components use Inertia patterns correctly, props match controller data
+
+Remaining risk:
+NOT VERIFIED in browser (Docker not running)
+
+---
+
+[AI-008]
+
+Task:
+Step 7 - Testing
+
+AI contribution:
+Created BookingTest.php (6 tests covering all 6 invariants) and ConcurrencyTest.php (4 tests including last-seat competition, pending booking not counting, database-level duplicate protection, payment failure)
+
+Decision:
+Accepted
+
+Reason:
+Tests map directly to critical invariants from workflow; include both application-level and database-level duplicate protection tests
+
+Files affected:
+- tests/Feature/BookingTest.php
+- tests/Feature/ConcurrencyTest.php
+
+Verification:
+Tests NOT EXECUTED (Docker not running)
+Test logic reviewed - covers:
+✓ can create trial booking
+✓ successful payment confirms when capacity exists
+✓ failed payment does not confirm
+✓ failed payment not in confirmed roster
+✓ duplicate confirmed booking prevented
+✓ class cannot exceed capacity 4
+✓ final-seat competition cannot produce two winners
+
+Remaining risk:
+ConcurrencyTest::test_final_seat_competition_cannot_produce_two_confirmed_winners runs sequentially, not truly concurrent - marked as sequential verification in test comments
+
+---
+
+[AI-009]
+
+Task:
+Step 8 - README.md & AI_USAGE.md
+
+AI contribution:
+Created comprehensive README.md with all required sections, AI_USAGE.md with honest disclosure
+
+Decision:
+Accepted
+
+Reason:
+README documents actual implementation, Docker commands, concurrency strategy with trade-offs, seed scenarios, time spent
+
+Files affected:
+- README.md
+- AI_USAGE.md
+
+Verification:
+README commands match actual project structure
+
+Remaining risk:
+README Docker commands NOT VERIFIED end-to-end (Docker not running)
+
+---
+
+[AI-010]
+
+Task:
+AI_WORK_LOG maintenance
+
+AI contribution:
+Created this log documenting all AI contributions, decisions, and verification status
+
+Decision:
+Accepted
+
+Reason:
+Workflow requires maintaining log throughout implementation
+
+Files affected:
+- AI_WORK_LOG (this file)
+
+Verification:
+Log accurately reflects work done
+
+Remaining risk:
+None

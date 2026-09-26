@@ -1,0 +1,44 @@
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+compose.yaml
+docker/
+.dockerignore
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Laravel
+vendor/
+node_modules/
+bootstrap/cache/
+storage/framework/cache/
+storage/framework/sessions/
+storage/framework/views/
+storage/logs/
+public/hot
+public/storage
+public/build
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Testing
+.phpunit.result.cache
+coverage/
