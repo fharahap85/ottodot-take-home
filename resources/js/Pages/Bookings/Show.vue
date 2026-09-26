@@ -17,15 +17,18 @@ function simulatePayment(result) {
     router.post(`/bookings/${props.booking.id}/payment`, {
         result: result,
     }, {
-        onSuccess: (page) => {
+        onSuccess: () => {
+            // Inertia redirects back to this page with refreshed booking data from server
+            // booking.status will already reflect the new state via fresh props
             isProcessing.value = false;
-            paymentResult.value = page.props.booking_status === 'confirmed' ? 'success' : 'failed';
-            // Update booking status from response
-            Object.assign(props.booking, page.props);
+            paymentResult.value = props.booking.status === 'confirmed' ? 'success' : 'failed';
         },
-        onError: (errors) => {
+        onError: () => {
             isProcessing.value = false;
             paymentResult.value = 'error';
+        },
+        onFinish: () => {
+            isProcessing.value = false;
         },
     });
 }

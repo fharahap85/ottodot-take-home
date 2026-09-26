@@ -26,13 +26,19 @@ function bookTrial() {
         student_id: selectedStudent.value,
         trial_class_id: selectedClass.value,
     }, {
-        onSuccess: (page) => {
+        onSuccess: () => {
+            // Inertia will redirect to bookings.show on success — no extra handling needed
             isBooking.value = false;
-            bookingStatus.value = { type: 'success', message: 'Booking created! Redirecting...' };
         },
         onError: (errors) => {
             isBooking.value = false;
-            bookingStatus.value = { type: 'error', message: errors.student_id || errors.trial_class_id || 'Booking failed.' };
+            // Inertia returns validation errors as plain strings (not arrays)
+            const msg = errors.student_id || errors.trial_class_id || errors.message || 'Booking failed.';
+            bookingStatus.value = { type: 'error', message: msg };
+        },
+        onFinish: () => {
+            // Fallback: ensure isBooking is always reset
+            isBooking.value = false;
         },
     });
 }
