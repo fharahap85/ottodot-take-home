@@ -182,4 +182,51 @@ class BookingTest extends TestCase
             ->count();
         $this->assertEquals(4, $confirmedCount);
     }
+
+    public function test_last_seat_race_condition_only_one_booking_confirmed(): void
+    {
+        $parent = ParentModel::factory()->create();
+
+        // Class with only 1 seat
+        $trialClass = TrialClass::factory()->create(['capacity' => 1]);
+
+        $studentA = Student::factory()->create(['parent_id' => $parent->id]);
+        $studentB = Student::factory()->create(['parent_id' => $parent->id]);
+
+        // Both students have pending bookings for the same last seat
+        $bookingA = Booking::factory()->create([
+            'student_id'     => $studentA->id,
+            'trial_class_id' => $trialClass->id,
+            'status'         => Booking::STATUS_PENDING_PAYMENT,
+        ]);
+        $bookingB = Booking::factory()->create([
+            'student_id'     => $studentB->id,
+            'trial_class_id' => $trialClass->id,
+            'status'         => Booking::STATUS_PENDING_PAYMENT,
+        ]);
+
+        // Both submit successful payment near-simultaneously (sequential simulation)
+        $this->postJson("/bookings/{$bookingA->id}/payment", ['result' => 'success']);
+        $this->postJson("/bookings/{$bookingB->id}/payment", ['result' => 'success']);
+
+        $bookingA->refresh();
+        $bookingB->refresh();
+
+        // Exactly one must be confirmed, the other must be payment_failed
+        $statuses = [$bookingA->status, $bookingB->status];
+        sort($statuses);
+        $this->assertEquals(
+            ['confirmed', 'payment_failed'],
+            $statuses,
+            'Exactly one booking should be confirmed and the other payment_failed when racing for the last seat.'
+        );
+
+        // Total confirmed for this class must never exceed capacity (1)
+        $confirmedCount = Booking::where('trial_class_id', $trialClass->id)
+            ->where('status', Booking::STATUS_CONFIRMED)
+            ->count();
+        $this->assertEquals(1, $confirmedCount,
+            'Confirmed bookings must not exceed class capacity even under race conditions.'
+        );
+    }
 }
