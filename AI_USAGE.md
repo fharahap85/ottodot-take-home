@@ -13,15 +13,15 @@
 3. **Eloquent Models**: Generated model classes with relationships, accessors, and status constants
 4. **Factories & Seeders**: Created factory classes and seeder files with specific demo scenarios
 5. **Controllers**: Implemented TrialClassController, BookingController, and PaymentController with business logic
-6. **Concurrency Logic**: Designed and implemented the row-level locking strategy for last-seat protection
+6. **Concurrency Logic**: Drafted initial concurrency approach; corrected and refined after review
 7. **Frontend Components**: Built Vue 3 + Inertia pages for trial class listing, booking form, booking details, and roster
-8. **Test Suite**: Wrote feature tests for all critical invariants including concurrency scenarios
+8. **Test Suite**: Wrote feature tests for critical booking/payment invariants; concurrent HTTP test added separately via cURL Multi
 9. **Documentation**: Generated README.md with architecture, API endpoints, and concurrency explanation
 
 ## Where AI Helped Me Move Faster
 
 - **Boilerplate Generation**: Docker configs, migration stubs, factory definitions, model scaffolding
-- **Test Coverage**: Quickly generated comprehensive test cases for all critical invariants
+- **Test Coverage**: Quickly generated sequential feature tests for booking, payment, duplicate, and capacity invariants
 - **Frontend Scaffolding**: Vue component structure with Tailwind classes and Inertia patterns
 - **Concurrency Review**: AI helped refine the PostgreSQL row-locking strategy after the initial transaction-only approach was rejected
 
@@ -29,16 +29,16 @@
 
 ### 1. Initial Concurrency Approach (Rejected)
 **AI Suggestion**: Use `DB::transaction` with simple count check before confirm.
-**My Correction**: This has a race condition - two requests can both read count=3 before either commits.
-**Resolution**: Implemented `lockForUpdate()` on the trial_class row inside the transaction, with re-checks after acquiring the lock.
+**My Correction**: This has a race condition — two requests can both read `count=3` before either commits.
+**Resolution**: Implemented `lockForUpdate()` on the `trial_classes` row inside the transaction, with re-checks of duplicate status and confirmed count after acquiring the lock.
 
 ### 2. Duplicate Booking Unique Index (Modified)
-**AI Suggestion**: Unique index on `(student_id, trial_class_id)` without status filter.
-**My Correction**: This would prevent multiple pending bookings too. Changed to PostgreSQL partial unique index `CREATE UNIQUE INDEX unique_confirmed_booking ON bookings (student_id, trial_class_id) WHERE status = 'confirmed'`, which allows multiple pending/failed bookings while strictly enforcing at most one confirmed booking for a student per trial class.
+**AI Suggestion**: Unique index on `(student_id, trial_class_id)` only, without status filter.
+**My Correction**: A plain unique index would block multiple `pending_payment` bookings for the same student + class (e.g., after a failed payment). The correct approach is a **PostgreSQL partial unique index**: `CREATE UNIQUE INDEX unique_confirmed_booking ON bookings (student_id, trial_class_id) WHERE status = 'confirmed'`. This only enforces uniqueness on confirmed rows, allowing multiple pending/failed bookings to coexist safely.
 
 ### 3. Payment Amount (Simplified)
 **AI Suggestion**: Make payment amount configurable per trial class.
-**My Decision**: Fixed at 1000 cents for all classes per scope lock - unnecessary complexity.
+**My Decision**: Fixed at 1000 cents for all classes per scope lock — unnecessary complexity for a take-home.
 
 ### 4. Frontend State Management (Rejected)
 **AI Suggestion**: Use Pinia store for global state.
@@ -46,7 +46,7 @@
 
 ### 5. Lock Exception Handling (Improved)
 **AI Suggestion**: Let exception bubble up.
-**My Correction**: Catch `LockException` explicitly and treat as payment failure for better UX.
+**My Correction**: Catch `LockException` explicitly and treat as `payment_failed` for better UX and predictable booking status.
 
 ## How I Verified AI Output
 

@@ -183,7 +183,14 @@ class BookingTest extends TestCase
         $this->assertEquals(4, $confirmedCount);
     }
 
-    public function test_last_seat_race_condition_only_one_booking_confirmed(): void
+    /**
+     * Verifies that the capacity enforcement logic (lockForUpdate + re-count inside transaction)
+     * correctly prevents a second pending booking from being confirmed once the last seat is taken.
+     *
+     * Note: This test runs two payment requests sequentially to verify backend capacity logic.
+     * True concurrent HTTP verification is covered by ConcurrencyTest::test_real_concurrent_http_payment_requests_for_last_seat().
+     */
+    public function test_capacity_enforcement_prevents_second_booking_on_last_seat(): void
     {
         $parent = ParentModel::factory()->create();
 
@@ -205,7 +212,7 @@ class BookingTest extends TestCase
             'status'         => Booking::STATUS_PENDING_PAYMENT,
         ]);
 
-        // Both submit successful payment near-simultaneously (sequential simulation)
+        // Sequential: first request claims the seat, second must be rejected by capacity check
         $this->postJson("/bookings/{$bookingA->id}/payment", ['result' => 'success']);
         $this->postJson("/bookings/{$bookingB->id}/payment", ['result' => 'success']);
 
