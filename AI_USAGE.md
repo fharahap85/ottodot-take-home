@@ -21,9 +21,9 @@
 ## Where AI Helped Me Move Faster
 
 - **Boilerplate Generation**: Docker configs, migration stubs, factory definitions, model scaffolding
-- **Test Coverage**: Quickly generated comprehensive test cases for all 6 critical invariants
+- **Test Coverage**: Quickly generated comprehensive test cases for all critical invariants
 - **Frontend Scaffolding**: Vue component structure with Tailwind classes and Inertia patterns
-- **Concurrency Pattern**: Applied known PostgreSQL locking patterns correctly on first attempt
+- **Rapid Prototyping**: Fast setup of database seeders, Eloquent models, and API controller scaffolding
 
 ## Where I Disagreed With, Corrected, or Rejected AI
 
