@@ -304,15 +304,16 @@ Running `php artisan migrate:fresh --seed` creates:
 | Step | Work | Time |
 |------|------|------|
 | 0 | Repository inspection | 5 min |
-| 1 | Docker + Laravel setup | 30 min |
-| 2 | Database model & seed | 45 min |
+| 1 | Docker + Laravel setup | 25 min |
+| 2 | Database model & seed | 35 min |
 | 3 | Core booking flow | 30 min |
-| 4 | Mock payment | 25 min |
-| 5 | Concurrency & integrity | 40 min |
+| 4 | Mock payment | 20 min |
+| 5 | Concurrency & integrity | 35 min |
 | 6 | Minimal UI & roster | 25 min |
-| 7 | Tests | 30 min |
-| 8 | Documentation | 25 min |
-| **Total** | | **~4 hours 15 min** |
+| 7 | Tests & Concurrency verification | 30 min |
+| 8 | Documentation & AI Disclosure | 20 min |
+| **Active Engineering Time** | | **~3 hours 45 min** |
+| **Total (inc. Docker builds & environment setup)** | | **~4 hours 00 min** |
 
 ## Deliberately Cut
 

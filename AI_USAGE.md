@@ -23,7 +23,7 @@
 - **Boilerplate Generation**: Docker configs, migration stubs, factory definitions, model scaffolding
 - **Test Coverage**: Quickly generated comprehensive test cases for all critical invariants
 - **Frontend Scaffolding**: Vue component structure with Tailwind classes and Inertia patterns
-- **Rapid Prototyping**: Fast setup of database seeders, Eloquent models, and API controller scaffolding
+- **Concurrency Review**: AI helped refine the PostgreSQL row-locking strategy after the initial transaction-only approach was rejected
 
 ## Where I Disagreed With, Corrected, or Rejected AI
 
