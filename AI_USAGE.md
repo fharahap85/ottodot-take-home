@@ -33,8 +33,8 @@
 **Resolution**: Implemented `lockForUpdate()` on the trial_class row inside the transaction, with re-checks after acquiring the lock.
 
 ### 2. Duplicate Booking Unique Index (Modified)
-**AI Suggestion**: Unique index on `(student_id, trial_class_id)` only.
-**My Correction**: This would prevent multiple pending bookings too. Changed to partial unique index on `(student_id, trial_class_id, status)` where status = 'confirmed' (implemented via unique index with status column included, relying on application logic for the partial aspect since PostgreSQL partial indexes need WHERE clause).
+**AI Suggestion**: Unique index on `(student_id, trial_class_id)` without status filter.
+**My Correction**: This would prevent multiple pending bookings too. Changed to PostgreSQL partial unique index `CREATE UNIQUE INDEX unique_confirmed_booking ON bookings (student_id, trial_class_id) WHERE status = 'confirmed'`, which allows multiple pending/failed bookings while strictly enforcing at most one confirmed booking for a student per trial class.
 
 ### 3. Payment Amount (Simplified)
 **AI Suggestion**: Make payment amount configurable per trial class.

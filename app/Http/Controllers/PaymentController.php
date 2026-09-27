@@ -51,8 +51,10 @@ class PaymentController extends Controller
 
     private function handleSuccessfulPayment(Booking $booking): RedirectResponse
     {
+        $errorMessage = null;
+
         try {
-            DB::transaction(function () use ($booking) {
+            DB::transaction(function () use ($booking, &$errorMessage) {
                 // Lock the trial class row to serialize concurrent confirmations
                 $trialClass = TrialClass::lockForUpdate()->findOrFail($booking->trial_class_id);
 
@@ -80,6 +82,7 @@ class PaymentController extends Controller
                         'paid_at' => now(),
                     ]);
 
+                    $errorMessage = 'Payment refunded. Student already has a confirmed booking for this class.';
                     return;
                 }
 
@@ -89,7 +92,7 @@ class PaymentController extends Controller
                     ->count();
 
                 if ($confirmedCount >= $trialClass->capacity) {
-                    // No seats available - mark as payment failed
+                    // No seats available - mark as payment failed (capacity reached)
                     $booking->update(['status' => Booking::STATUS_PAYMENT_FAILED]);
 
                     PaymentAttempt::create([
@@ -99,6 +102,7 @@ class PaymentController extends Controller
                         'paid_at' => now(),
                     ]);
 
+                    $errorMessage = 'Payment processed but class capacity has been reached. Booking could not be confirmed.';
                     return;
                 }
 
@@ -122,8 +126,15 @@ class PaymentController extends Controller
                 'amount' => 1000,
                 'paid_at' => now(),
             ]);
+
+            $errorMessage = 'Payment confirmation timed out due to high concurrency. Please try again.';
         }
 
-        return redirect()->route('bookings.show', $booking);
+        $redirect = redirect()->route('bookings.show', $booking);
+        if ($errorMessage) {
+            $redirect->with('error', $errorMessage);
+        }
+
+        return $redirect;
     }
 }

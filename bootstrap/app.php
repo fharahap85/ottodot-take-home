@@ -13,7 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->encryptCookies(except: ['health']);
-        $middleware->validateCsrfTokens(except: ['health']);
+        $middleware->validateCsrfTokens(except: ['health', 'bookings/*', 'bookings']);
         $middleware->web(append: [
             HandleInertiaRequests::class,
         ]);

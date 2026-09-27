@@ -119,10 +119,10 @@ Parent
 
 **bookings**
 - id, student_id, trial_class_id, status (pending_payment, confirmed, payment_failed, cancelled), timestamps
-- Unique index on (student_id, trial_class_id, status) for confirmed bookings
+- Partial unique index on `(student_id, trial_class_id)` where `status = 'confirmed'`
 
-**payment_attempts**
-- id, booking_id, status (pending, success, failed), amount, paid_at, timestamps
+### Tables
+- See above schema definitions.
 
 ## Key Backend Endpoints / Actions
 
@@ -172,7 +172,7 @@ When payment fails:
 ## Duplicate Booking Protection
 
 1. **Application-level**: Controller checks for existing confirmed/pending booking before creating new one
-2. **Database-level**: Unique index on `(student_id, trial_class_id, status)` where status = 'confirmed'
+2. **Database-level**: Partial unique index on `(student_id, trial_class_id)` where `status = 'confirmed'` (`CREATE UNIQUE INDEX unique_confirmed_booking ON bookings (student_id, trial_class_id) WHERE status = 'confirmed'`)
 3. **Confirmation-level**: During payment confirmation, re-checks for duplicate confirmed booking while holding row lock
 
 ## Last-Seat Race Condition
