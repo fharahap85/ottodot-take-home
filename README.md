@@ -337,7 +337,7 @@ For production deployment, would add:
 
 ## What I Would Do Next
 
-1. **Add integration test with true concurrency**: Use a tool like `paratest` or custom script to simulate concurrent requests
+1. **Add load/stress testing for concurrency**: `ConcurrencyTest` covers two concurrent HTTP requests via cURL Multi; a load test (e.g. `k6`, `wrk`) would verify behaviour under higher concurrency on the same class
 2. **Implement exponential backoff for lock contention**: Handle `LockException` with retry logic
 3. **Add database-level CHECK constraint**: `confirmed_count <= capacity` (requires trigger or materialized view)
 4. **Add booking expiration**: Auto-cancel pending bookings after N minutes
